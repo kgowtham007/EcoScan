@@ -1,0 +1,24 @@
+{
+  "name": "ecoscan-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "gateway"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:gateway": "npm run dev --workspace=gateway",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore",
+    "test": "npm run test --workspaces"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

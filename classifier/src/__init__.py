@@ -1,0 +1,1 @@
+# EcoScan AI — Classification Service

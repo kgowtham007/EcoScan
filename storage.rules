@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper: check if the request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: check if the requesting user owns the path
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // -------------------------------------------------------------------------
+    // scans/{userId}/**
+    // Authenticated users can read/write only their own scan images
+    // -------------------------------------------------------------------------
+    match /scans/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && request.resource.size < 10 * 1024 * 1024  // 10 MB max
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Deny all other paths by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

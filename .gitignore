@@ -1,0 +1,17 @@
+node_modules
+dist
+build
+.vite
+coverage
+*.local
+.env
+.env.*
+!.env.example
+__pycache__
+*.pyc
+*.pyo
+.venv
+classifier/.venv
+.pytest_cache
+.hypothesis
+*.egg-info

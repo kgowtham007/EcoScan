@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: check if the requesting user owns the resource by uid
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Helper: Cloud Functions / Admin SDK bypass (no auth token means server-side)
+    // Admin writes come from Cloud Functions using the Admin SDK which bypasses rules,
+    // so we deny client writes to admin-only collections.
+    function isAdmin() {
+      return false; // Client-side admin writes are not permitted; use Admin SDK / Cloud Functions
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{userId}
+    // Read/write only by the owning user
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // scans/{scanId}
+    // Read/write only by the owning user (userId field must match)
+    // -------------------------------------------------------------------------
+    match /scans/{scanId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // leaderboard/{userId}
+    // Read by any authenticated user; write only by Cloud Functions (Admin SDK)
+    // -------------------------------------------------------------------------
+    match /leaderboard/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Admin SDK (Cloud Functions) bypasses these rules
+    }
+
+    // -------------------------------------------------------------------------
+    // recycling_centers/{centerId}
+    // Read by any authenticated user; write only by admin
+    // -------------------------------------------------------------------------
+    match /recycling_centers/{centerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // smart_bin_events/{eventId}
+    // Read/write only by authenticated users for their own events
+    // -------------------------------------------------------------------------
+    match /smart_bin_events/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // region_rules/{ruleId}
+    // Read by any authenticated user; write only by admin
+    // -------------------------------------------------------------------------
+    match /region_rules/{ruleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // products/{barcodeId}
+    // Read by any authenticated user; write only by admin
+    // -------------------------------------------------------------------------
+    match /products/{barcodeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
